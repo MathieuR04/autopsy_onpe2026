@@ -387,13 +387,15 @@
 <div class="section" id="robustez">
   <h2>¿Qué tan sólido es el resultado?</h2>
 
-  <p>El supuesto central es que los votantes que no pudieron ir habrían votado igual que sus vecinos de mesa. Pero ¿qué pasa si ese supuesto es incorrecto? El siguiente simulador permite explorar el resultado bajo distintos escenarios.</p>
+  <p>Para la primera verificación de robustez, comparamos únicamente mesas dentro del mismo distrito, eliminando la posibilidad de que las diferencias en ausentismo se deban a características propias de cada distrito. Como muestra la figura de abajo, el patrón se mantiene.</p>
 
   <div class="figure-wrap">
     <img src="output/figures/fig4_robustez_dentro_distrito.png"
          alt="Variación dentro del distrito">
     <div class="figure-caption">Primera verificación de robustez: el mismo patrón aparece cuando comparamos solo mesas <em>dentro del mismo distrito</em>, eliminando cualquier diferencia entre distritos.</div>
   </div>
+
+  <p>El supuesto central es que los votantes que no pudieron ir habrían votado igual que sus vecinos de mesa. Pero ¿qué pasa si ese supuesto es incorrecto? El siguiente simulador permite explorar el resultado bajo distintos escenarios.</p>
 
   <div class="slider-section">
     <h3>Simulador: explora los supuestos del modelo</h3>

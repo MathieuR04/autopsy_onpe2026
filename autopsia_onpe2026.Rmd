@@ -1,0 +1,304 @@
+---
+title: "Autopsia Electoral ONPE 2026: Impacto de las Fallas Logísticas sobre el Ausentismo y los Resultados Electorales en Lima"
+author: "Mathieu Rojas"
+date: "`r format(Sys.Date(), '%d de %B de %Y')`"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    number_sections: true
+    toc: false
+    keep_tex: false
+    fig_caption: true
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{float}
+  - \usepackage{setspace}
+  - \usepackage{microtype}
+  - \floatplacement{figure}{H}
+  - \floatplacement{table}{H}
+  - \usepackage{caption}
+  - \captionsetup[figure]{font=small,labelfont=bf}
+  - \captionsetup[table]{font=small,labelfont=bf}
+fontsize: 11pt
+geometry: "left=3cm, right=3cm, top=2.5cm, bottom=2.5cm"
+lang: es
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo       = FALSE,
+  warning    = FALSE,
+  message    = FALSE,
+  fig.align  = "center",
+  fig.pos    = "H",
+  out.width  = "85%"
+)
+library(tidyverse)
+library(fixest)
+library(splines)
+library(knitr)
+library(kableExtra)
+
+BASE  <- path.expand("~/Documents/datapol/peru/election_day/autopsy_onpe2026")
+CLEAN <- file.path(BASE, "data", "clean")
+
+lima_2026     <- readRDS(file.path(CLEAN, "lima_2026_imputado.rds"))
+panel         <- readRDS(file.path(CLEAN, "panel.rds"))
+grilla        <- readRDS(file.path(CLEAN, "grilla_predicciones.rds"))
+cobertura     <- read_csv(file.path(CLEAN, "cobertura_distritos.csv"),
+                          show_col_types = FALSE) |>
+  mutate(district = str_to_upper(str_trim(district)))
+resultados_r2 <- readRDS(file.path(CLEAN, "resultados_robustez2.rds"))
+
+n_mesas_total     <- nrow(lima_2026)
+n_mesas_esperadas <- 29266L
+pct_cobertura     <- round(n_mesas_total / n_mesas_esperadas * 100, 1)
+n_mesas_afectadas <- sum(lima_2026$delay_min >= 120, na.rm = TRUE)
+total_vot_perd    <- sum(lima_2026$votantes_perdidos, na.rm = TRUE)
+votos_rp_imp      <- round(sum(lima_2026$votos_rp_imputados, na.rm = TRUE))
+votos_jpp_imp     <- round(sum(lima_2026$votos_jpp_imputados, na.rm = TRUE))
+dif_base          <- votos_rp_imp - votos_jpp_imp
+
+top_faltantes <- cobertura |>
+  arrange(desc(missing)) |>
+  filter(missing > 50) |>
+  mutate(label = paste0(str_to_title(district), " (", missing, ")")) |>
+  pull(label)
+
+FIG <- file.path(BASE, "output", "figures")
+```
+
+```{r resumen-abstract, results='asis'}
+cat(paste0(
+  "\\begin{abstract}\n",
+  "Este trabajo estima el impacto causal de los retrasos en la apertura de mesas ",
+  "de sufragio durante las Elecciones Generales del Per\\'{u} del 12 de abril de 2026 ",
+  "sobre el ausentismo electoral y sobre la contienda entre Rafael L\\'{o}pez Aliaga ",
+  "(Renovaci\\'{o}n Popular) y Roberto S\\'{a}nchez (Juntos por el Per\\'{u}). ",
+  "Utilizando un panel de ", format(nrow(panel), big.mark=","), " observaciones de mesas de sufragio ",
+  "para el per\\'{\\i}odo 2006--2026 con efectos fijos de distrito y a\\~{n}o, ",
+  "encontramos que los retrasos mayores a dos horas generaron un incremento ",
+  "estad\\'{\\i}sticamente significativo en el ausentismo. ",
+  "Con el ", pct_cobertura, "\\% de mesas de sufragio procesadas a la fecha, ",
+  "estimamos que \\textbf{", format(total_vot_perd, big.mark=","), "} ciudadanos ",
+  "no pudieron ejercer su derecho al voto, con un impacto neto de ",
+  "\\textbf{", format(dif_base, big.mark=","), "} votos a favor de L\\'{o}pez Aliaga ",
+  "sobre S\\'{a}nchez. ",
+  "Este resultado es robusto a distintas especificaciones y a supuestos alternativos ",
+  "sobre las preferencias de los votantes ausentes. ",
+  "Este an\\'{a}lisis documenta las consecuencias medibles de una falla log\\'{\\i}stica ",
+  "de responsabilidad comprobada que, en el contexto de una elecci\\'{o}n ",
+  "extremadamente re\\~{n}ida, pudo haber alterado el resultado final.\n",
+  "\\end{abstract}\n"
+))
+```
+
+\vspace{0.3cm}
+
+
+# Introducción
+
+El 12 de abril de 2026, las Elecciones Generales del Perú estuvieron marcadas por una falla logística de magnitud inédita en Lima Metropolitana y Callao. La empresa **Servicios Generales Galaga S.A.C.**, contratada por la ONPE para el transporte del material electoral, incumplió el cronograma de distribución: no proporcionó el número ni el tamaño de camiones requeridos, retrasando la carga durante toda la madrugada previa a la jornada. Como consecuencia, miles de mesas de sufragio no pudieron instalarse a las 7:00 a.m., hora oficial de apertura, y en casos extremos permanecieron cerradas hasta las 2:00 p.m., cuando el Jurado Nacional de Elecciones extendió el plazo máximo de instalación.
+
+El contexto político hace que esta falla sea especialmente relevante. La contienda más reñida de la jornada fue la disputa por el segundo lugar, y por tanto por el pase a segunda vuelta, entre **Rafael López Aliaga** (Renovación Popular, RP) y **Roberto Sánchez** (Juntos por el Perú, JPP). López Aliaga es el candidato con mayor concentración de apoyo en Lima, donde obtuvo su mejor desempeño electoral. Las zonas afectadas por los retrasos, principalmente los distritos del sur y oeste de Lima, forman parte de su territorio electoral natural. Esta coincidencia geográfica genera una pregunta empírica precisa: ¿cuántos votos se perdieron por las fallas logísticas, y a quién habrían favorecido?
+
+Este trabajo responde esa pregunta mediante un diseño de identificación basado en variación exógena. La decisión de qué zonas recibieron el material tarde fue determinada por el incumplimiento del proveedor, no por las características políticas de los distritos, lo que proporciona la variación cuasi-experimental necesaria para identificar el efecto causal del retraso sobre el ausentismo. Siguiendo la literatura sobre barreras al voto y participación electoral (Brady y McNulty, 2011; Haspel y Knotts, 2005; Cantoni, 2020), estimatos el incremento en el ausentismo producto del retraso mediante un spline cúbico restringido con efectos fijos de distrito y año, identificado sobre un panel de `r format(nrow(panel), big.mark=",")` observaciones de mesas de sufragio en Lima y Callao para el período 2006-2026.
+
+> *Nota de cobertura:* Este análisis se basa en `r format(n_mesas_total, big.mark=",")` mesas de sufragio, equivalentes al **`r pct_cobertura`\%** del total esperado para Lima y Callao (`r format(n_mesas_esperadas, big.mark=",")`). Los resultados se actualizan automáticamente conforme la ONPE publica nuevas actas digitales.
+
+# Contexto institucional y datos
+
+## La falla logística de Galaga
+
+Según declaraciones del jefe de la ONPE, Piero Corvetto, el despliegue del material electoral se inició la noche del viernes 11 de abril desde una explanada en San Pedro, Lurín. El cronograma contemplaba dos turnos de entrega. Sin embargo, Servicios Generales Galaga S.A.C., empresa con antecedentes de incumplimientos en contratos estatales, que había solicitado los 400 camiones requeridos apenas una semana antes de la elección pese a haber sido contratada un mes antes, no proporcionó las unidades en el tamaño y cantidad acordados, retrasando la carga durante toda la madrugada.
+
+El resultado fue que `r format(n_mesas_afectadas, big.mark=",")` mesas de sufragio (de las `r format(n_mesas_total, big.mark=",")` con datos disponibles, equivalentes al `r pct_cobertura`\% del total) abrieron con más de dos horas de retraso. La distribución espacial del shock no fue aleatoria: los distritos más afectados se concentran en Lima Sur y Lima Oeste, corredores geográficos dependientes de los centros de acopio de la ONPE en Lurín.
+
+## Datos
+
+**Actas digitales STAE-ONPE 2026.** El sistema STAE publica actas individuales por mesa de sufragio en formato PDF. Extrajimos de manera automatizada, mediante un scraper desarrollado para este trabajo: *(i)* el acta de instalación, que registra la hora exacta de apertura de cada mesa, y *(ii)* el acta de escrutinio, que consigna votos por candidato, total de votantes y electores hábiles. Se procesaron `r format(n_mesas_total, big.mark=",")` mesas de Lima y Callao, representando el `r pct_cobertura`\% del universo esperado.
+
+**Panel histórico ONPE 2006--2021.** Para identificar el nivel estructural de ausentismo en cada distrito, utilizamos datos de ausentismo a nivel de mesa para las elecciones generales de 2006, 2011, 2016 y 2021 en Lima y Callao, totalizando `r format(nrow(panel) - n_mesas_total, big.mark=",")` observaciones históricas.
+
+## Cobertura parcial y sesgo de estimación
+
+El análisis cubre actualmente el `r pct_cobertura`\% de las mesas esperadas. Las actas faltantes no se distribuyen aleatoriamente: se concentran en los distritos con mayores retrasos documentados, `r paste(top_faltantes[1:4], collapse="; ")`, precisamente donde el shock logístico fue más severo. Esta concentración implica que las mesas faltantes tienen mayor probabilidad de presentar retrasos significativos y ausentismo inducido, lo que sesga las estimaciones actuales hacia la subestimación. **Las cifras reportadas deben interpretarse como un límite inferior del impacto total.** El análisis se actualiza automáticamente conforme la ONPE incorpora nuevas actas.
+
+```{r tab-descriptivos}
+lima_2026 |>
+  group_by(delay_cat) |>
+  summarise(
+    Mesas                 = n(),
+    `Retraso prom. (min)` = round(mean(delay_min)),
+    `Aus. observado`      = scales::percent(
+      weighted.mean(abs_observado, eligible_voters), accuracy = 0.1),
+    `Aus. contrafactual`  = scales::percent(
+      weighted.mean(abs_contrafactual, eligible_voters), accuracy = 0.1),
+    `Vot. perdidos`       = format(sum(votantes_perdidos), big.mark = ",")
+  ) |>
+  rename(`Categoría de retraso` = delay_cat) |>
+  kable(
+    caption  = "Estadísticas descriptivas por categoría de retraso en apertura de mesa de sufragio",
+    booktabs = TRUE,
+    align    = "lrrrrr",
+    linesep  = ""
+  ) |>
+  kable_styling(
+    latex_options = c("striped", "hold_position", "scale_down"),
+    font_size     = 9
+  ) |>
+  footnote(
+    general = paste0(
+      "Aus. contrafactual = ausentismo predicho si la mesa hubiera abierto a tiempo. ",
+      "Votantes perdidos solo se reportan para mesas con retraso $\\\\geq 120$ min. ",
+      "Basado en ", format(n_mesas_total, big.mark = ","),
+      " mesas (", pct_cobertura, "\\\\% del total esperado)."
+    ),
+    escape = FALSE
+  )
+```
+
+# Estrategia de identificación
+
+## Variación exógena y efectos fijos
+
+La identificación causal descansa en dos elementos. Primero, el retraso en la apertura de mesas fue determinado por el incumplimiento de Galaga, un factor externo a las características políticas o socioeconómicas de los distritos afectados. Segundo, utilizamos un panel de cuatro elecciones históricas (2006--2021) para construir efectos fijos de distrito que absorben toda la heterogeneidad no observada entre distritos: cultura política local, infraestructura, composición demográfica y nivel estructural de participación electoral. Siguiendo la literatura sobre costos de votación (Brady y McNulty, 2011; Haspel y Knotts, 2005), el efecto del retraso se identifica comparando mesas del mismo distrito en 2026, las que recibieron el material tarde frente a las que lo recibieron a tiempo, luego de descontar las diferencias históricas entre distritos.
+
+## Especificación econométrica
+
+Estimamos el siguiente modelo para cada mesa de sufragio $i$ en el distrito $d$ y el año $t$:
+
+$$\text{Ausentismo}_{idt} = \alpha_d + \gamma_t + f(\text{Retraso}_{idt}) \cdot \mathbf{1}[t=2026] + \varepsilon_{idt}$$
+
+Donde $\alpha_d$ son efectos fijos de distrito, $\gamma_t$ son efectos fijos de año, y $f(\cdot)$ es un **spline cúbico restringido** con nudos en 60, 120 y 180 minutos. El término de retraso es cero para todos los años anteriores a 2026, de modo que el efecto se identifica exclusivamente de la variación dentro de cada distrito en 2026.
+
+La elección del spline sobre una especificación lineal responde a consideraciones teóricas y empíricas. Un ciudadano que encuentra su mesa cerrada a las 7:30 a.m. probablemente espera o regresa; uno que la encuentra cerrada a las 11:00 a.m. enfrenta una ventana de votación reducida a la mitad y mayores costos de oportunidad. El spline permite recuperar esta no-linealidad sin imponer ninguna forma funcional específica. Los errores estándar se clusteran a nivel de distrito y las observaciones se ponderan por número de electores hábiles.
+
+# Resultados
+
+```{r resumen-numeros, results='asis'}
+cat(paste0(
+  "\\vspace{0.3cm}\n",
+  "\\begin{center}\n",
+  "\\fbox{\\parbox{0.88\\textwidth}{\n",
+  "\\centering\\small\n",
+  "\\textbf{Resultados al ", format(Sys.Date(), "%d/%m/%Y"),
+  " --- ", pct_cobertura, "\\% de mesas de sufragio procesadas}\n",
+  "}}\n",
+  "\\end{center}\n",
+  "\\vspace{0.3cm}\n"
+))
+```
+
+## Efecto del retraso sobre el ausentismo
+
+```{r fig-curva, fig.cap=paste0("Efecto marginal estimado del retraso en apertura sobre la tasa de ausentismo, respecto a una mesa abierta a las 7:00 a.m. La banda representa el IC al 95\\% por bootstrap de clústeres. Basado en ", format(n_mesas_total, big.mark=","), " mesas (", pct_cobertura, "\\% del total esperado)."), out.width="85%", fig.height=4}
+include_graphics(file.path(FIG, "fig2_curva_respuesta.png"))
+```
+
+La Figura \ref{fig:fig-curva} presenta la curva de respuesta estimada. Los resultados muestran un patrón consistente con la intuición teórica: los retrasos menores a 60 minutos tienen efectos estadísticamente indistinguibles de cero. El efecto se vuelve significativo a partir de las dos horas de retraso y se acelera conforme avanza la mañana, coherente con modelos de costo de participación en los que el efecto disuasorio depende de la percepción de la ventana de tiempo disponible (Downs, 1957; Brady y McNulty, 2011). Una mesa que abrió a las 2:00 p.m. tuvo una tasa de ausentismo aproximadamente **7.8 puntos porcentuales** mayor de lo que habría tenido de abrir a tiempo.
+
+Los coeficientes del spline son estadísticamente significativos (p $<$ 0.001) para retrasos superiores a 120 minutos. Por esta razón, **solo imputamos votantes perdidos a las `r format(n_mesas_afectadas, big.mark=",")` mesas con retrasos de dos horas o más**. Este umbral, determinado por el dato, evita atribuir efectos causales donde no podemos rechazar la hipótesis nula.
+
+## Magnitud del ausentismo inducido
+
+```{r fig-ausentismo, fig.cap=paste0("Ausentismo observado frente al ausentismo contrafactual estimado por categoría de retraso. La diferencia entre ambas barras representa el exceso de ausentismo atribuible al retraso. Basado en ", format(n_mesas_total, big.mark=","), " mesas (", pct_cobertura, "\\% del total esperado)."), out.width="85%", fig.height=4}
+include_graphics(file.path(FIG, "fig3_ausentismo_obs_vs_cf.png"))
+```
+
+Estimamos que las fallas logísticas impidieron ejercer el voto a aproximadamente **`r format(total_vot_perd, big.mark=",")`** ciudadanos en Lima y Callao (Figura \ref{fig:fig-ausentismo}).
+
+## Distribución geográfica
+
+```{r fig-mapa-retraso, fig.cap="Retraso promedio en apertura de mesas de sufragio por distrito. Lima Metropolitana y Callao, Elecciones Generales 2026.", out.width="72%", fig.height=4.5}
+include_graphics(file.path(FIG, "fig6_mapa_retraso.png"))
+```
+
+```{r fig-mapa-perdidos, fig.cap="Número estimado de votantes que no pudieron sufragar por distrito, atribuibles a los retrasos en apertura de mesas.", out.width="72%", fig.height=4.5}
+include_graphics(file.path(FIG, "fig7_mapa_votantes_perdidos.png"))
+```
+
+```{r fig-mapa-rp, fig.cap="Concentración de votos a favor de Renovación Popular por distrito. Los distritos con mayor apoyo a López Aliaga coinciden geográficamente con los de mayores retrasos.", out.width="72%", fig.height=4.5}
+include_graphics(file.path(FIG, "fig8_mapa_rp_share.png"))
+```
+
+```{r fig-faltantes, fig.cap="Porcentaje de actas de mesa aún no disponibles por distrito. Los distritos con más actas faltantes coinciden con los de mayores retrasos, lo que sugiere que las estimaciones actuales subestiman el impacto total.", out.width="72%", fig.height=4.5}
+include_graphics(file.path(FIG, "fig9_mapa_actas_faltantes.png"))
+```
+
+Las Figuras \ref{fig:fig-mapa-retraso}--\ref{fig:fig-faltantes} muestran la distribución geográfica del shock. Los retrasos se concentran en Lima Sur, Lurín, Pachacámac, San Juan de Miraflores y Villa El Salvador. Estos mismos distritos presentan los mayores niveles de ausentismo inducido estimado y, de manera significativa, las mayores proporciones de actas aún no disponibles. La coincidencia geográfica entre retrasos, votantes perdidos y actas faltantes constituye evidencia descriptiva adicional de que la estimación actual es conservadora.
+
+## Imputación de votos
+
+Para estimar cómo habrían votado los ciudadanos que no pudieron sufragar, adoptamos el supuesto más parsimonioso disponible: los votantes ausentes habrían votado en las mismas proporciones que los votantes observados en su misma mesa de sufragio. Este supuesto, estándar en la literatura de imputación electoral (King et al., 2001), no requiere ninguna asunción sobre comportamiento diferencial y opera al nivel más granular posible, la mesa individual.
+
+```{r tab-imputacion}
+tibble(
+  Candidato = c(
+    "Rafael López Aliaga, Renovación Popular (RP)",
+    "Roberto Sánchez, Juntos por el Perú (JPP)",
+    "\\textbf{Diferencia neta a favor de RP}"
+  ),
+  `Votos imputados` = c(
+    format(votos_rp_imp,  big.mark = ","),
+    format(votos_jpp_imp, big.mark = ","),
+    paste0("\\textbf{", format(dif_base, big.mark = ","), "}")
+  )
+) |>
+  kable(
+    caption  = "Votos imputados a los candidatos principales bajo el supuesto proporcional",
+    booktabs = TRUE,
+    align    = "lr",
+    escape   = FALSE,
+    linesep  = ""
+  ) |>
+  kable_styling(latex_options = c("hold_position"), font_size = 10) |>
+  row_spec(3, bold = TRUE) |>
+  footnote(
+    general = paste0(
+      "Votos imputados = votantes perdidos $\\\\times$ proporción observada en la misma mesa. ",
+      "Solo mesas con retraso $\\\\geq 120$ min. ",
+      "Basado en ", format(n_mesas_total, big.mark = ","),
+      " mesas (", pct_cobertura, "\\\\% del total esperado)."
+    ),
+    escape = FALSE
+  )
+```
+
+# Verificaciones de robustez
+
+## Variación dentro del distrito
+
+```{r fig-robustez1, fig.cap="Ausentismo residual por categoría de retraso, luego de descontar la media histórica del distrito. El patrón confirma el efecto del retraso usando solo variación within-distrito.", out.width="85%", fig.height=4}
+include_graphics(file.path(FIG, "fig4_robustez_dentro_distrito.png"))
+```
+
+La primera verificación utiliza únicamente la variación entre mesas del mismo distrito (Figura \ref{fig:fig-robustez1}). Este estimador, equivalente a efectos fijos de interacción distrito$\times$año, es el más exigente disponible y descarta la posibilidad de que el efecto sea atribuible a diferencias estructurales entre distritos.
+
+## Sensibilidad de las preferencias de los votantes ausentes
+
+```{r fig-robustez2, fig.cap=paste0("Votos netos imputados a favor de RP bajo distintos supuestos sobre las preferencias de los votantes ausentes. El rango evaluado corresponde a $\\\\pm 2$ desviaciones estándar de la variación within-distrito en la proporción de votos a JPP. La estimación es positiva para RP en todo el rango."), out.width="85%", fig.height=4}
+include_graphics(file.path(FIG, "fig5_robustez_sensibilidad.png"))
+```
+
+La segunda verificación parametriza la desviación $\delta$ entre la preferencia observada en la mesa y la preferencia de los ausentes, siguiendo el enfoque de análisis de sensibilidad de Rosenbaum (2002). El rango de $\delta$ está calibrado empíricamente a $\pm 2$ desviaciones estándar de la variación within-distrito en la proporción de votos a JPP. **El resultado es positivo para RP en todos los escenarios evaluados** (Figura \ref{fig:fig-robustez2}).
+
+# Discusión y limitaciones
+
+**Cobertura parcial.** El análisis cubre el `r pct_cobertura`\% de las mesas esperadas. Las actas faltantes se concentran en los distritos más afectados, lo que implica sesgo hacia la subestimación. Las estimaciones deben interpretarse como límite inferior del impacto total. Conforme se porcesen más mesas de los distritos afectados, se espera que esto incremento el total de votantes cuyo derecho a elegir fue vulnerado y el impacto que esto pudo tener en el margen final de la elección presidencial. 
+
+**Supuesto de preferencias.** El supuesto de proporcionalidad es conservador pero imperfecto. La verificación de robustez muestra que las conclusiones son insensibles a desviaciones dentro del rango empíricamente plausible.
+
+**Causalidad residual.** Pese al diseño de efectos fijos, no podemos descartar completamente que otros factores de 2026 correlacionados con el retraso hayan incidido en el ausentismo. Sin embargo, la naturaleza del shock, un incumplimiento de proveedor, reduce considerablemente esta preocupación.
+
+# Conclusión
+
+Las fallas logísticas de la ONPE el 12 de abril de 2026 tuvieron consecuencias medibles, estadísticamente significativas y geográficamente concentradas sobre la participación ciudadana. Este trabajo estima que dichas fallas resultaron en aproximadamente **`r format(total_vot_perd, big.mark=",")`** ciudadanos que no pudieron ejercer su derecho al voto, con un impacto neto estimado de **`r format(dif_base, big.mark=",")`** votos a favor de Rafael López Aliaga sobre Roberto Sánchez. Este resultado es robusto a distintas especificaciones del modelo, a la variación dentro del distrito, y a supuestos alternativos sobre las preferencias de los votantes ausentes.
+
+\vspace{1cm}
+\hrule
+\vspace{0.3cm}
+
+\small
+*Código y datos disponibles en:* \texttt{github.com/MathieuR04/autopsy\_onpe2026}

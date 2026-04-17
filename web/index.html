@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autopsia Electoral ONPE 2026</title>
+  <style>
+    :root {
+      --rp:       #003087;
+      --rp-light: #e8eef7;
+      --jpp:      #C8102E;
+      --jpp-light:#fbeaed;
+      --gray:     #6b7280;
+      --light:    #f9fafb;
+      --border:   #e5e7eb;
+      --text:     #111827;
+      --text-sec: #4b5563;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.7;
+    }
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    nav .logo {
+      font-family: 'Arial', sans-serif;
+      font-weight: 700; font-size: 0.9rem;
+      color: var(--rp); letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    nav .nav-links a {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.85rem; color: var(--gray);
+      text-decoration: none; margin-left: 1.5rem;
+    }
+    nav .nav-links a:hover { color: var(--rp); }
+
+    /* HERO */
+    .hero {
+      max-width: 820px; margin: 0 auto;
+      padding: 4rem 2rem 2rem;
+    }
+    .hero .kicker {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.8rem; font-weight: 700;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--rp); margin-bottom: 1rem;
+    }
+    .hero h1 {
+      font-size: 2.6rem; line-height: 1.15;
+      font-weight: normal; margin-bottom: 1.2rem;
+    }
+    .hero .byline {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.85rem; color: var(--gray);
+      margin-bottom: 0.4rem;
+    }
+    .hero .abstract {
+      font-size: 1.1rem; color: var(--text-sec);
+      border-left: 3px solid var(--rp);
+      padding-left: 1.2rem; margin: 2rem 0;
+    }
+
+    /* LIVE BANNER */
+    .live-banner {
+      background: var(--rp-light);
+      border: 1px solid #c5d4ea;
+      border-radius: 6px;
+      padding: 0.8rem 1.2rem;
+      font-family: 'Arial', sans-serif;
+      font-size: 0.82rem; color: var(--rp);
+      display: flex; align-items: center; gap: 0.6rem;
+      margin-bottom: 2.5rem;
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--rp);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    /* STAT CARDS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.2rem;
+      margin: 2.5rem 0;
+    }
+    .stat-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.4rem 1.2rem;
+      text-align: center;
+    }
+    .stat-card .stat-number {
+      font-size: 2.4rem; font-weight: 700;
+      color: var(--rp); line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .stat-card .stat-label {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.8rem; color: var(--text-sec);
+      line-height: 1.3;
+    }
+    .stat-card.highlight {
+      border-color: var(--rp);
+      background: var(--rp-light);
+    }
+    .stat-card.highlight .stat-number { color: var(--rp); }
+
+    /* SECTION */
+    .section {
+      max-width: 820px; margin: 0 auto;
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+    }
+    .section h2 {
+      font-size: 1.5rem; font-weight: normal;
+      margin-bottom: 1rem;
+    }
+    .section h3 {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.9rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--gray); margin: 1.8rem 0 0.6rem;
+    }
+    .section p {
+      font-size: 1rem; margin-bottom: 1rem;
+      color: var(--text);
+    }
+    .section .note {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.78rem; color: var(--gray);
+      margin-top: 0.4rem;
+    }
+
+    /* FIGURE */
+    .figure-wrap {
+      margin: 1.8rem 0;
+    }
+    .figure-wrap img {
+      width: 100%; border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .figure-caption {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.78rem; color: var(--gray);
+      margin-top: 0.5rem; line-height: 1.4;
+    }
+
+    /* MAPS GRID */
+    .maps-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.8rem 0;
+    }
+
+    /* INTERACTIVE SLIDER */
+    .slider-section {
+      background: var(--light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+    .slider-section h3 {
+      font-size: 1.1rem; font-weight: normal;
+      margin-bottom: 0.5rem; color: var(--text);
+      text-transform: none; letter-spacing: 0;
+    }
+    .slider-section p {
+      font-size: 0.88rem; color: var(--text-sec);
+      margin-bottom: 1.5rem;
+    }
+    .slider-wrap {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .slider-wrap label {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.82rem; color: var(--gray);
+      white-space: nowrap; min-width: 200px;
+    }
+    input[type=range] {
+      flex: 1; accent-color: var(--rp);
+    }
+    .slider-val {
+      font-family: 'Arial', sans-serif;
+      font-weight: 700; font-size: 0.9rem;
+      color: var(--rp); min-width: 50px;
+      text-align: right;
+    }
+    .result-box {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .result-item {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      text-align: center;
+    }
+    .result-item .result-num {
+      font-size: 1.8rem; font-weight: 700;
+      color: var(--rp);
+    }
+    .result-item .result-num.negative { color: var(--jpp); }
+    .result-item .result-label {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.75rem; color: var(--gray);
+      line-height: 1.3; margin-top: 0.2rem;
+    }
+    .scenario-note {
+      font-family: 'Arial', sans-serif;
+      font-size: 0.78rem; color: var(--gray);
+      text-align: center; margin-top: 0.8rem;
+    }
+
+    /* METHODOLOGY BOX */
+    .method-box {
+      background: var(--light);
+      border-left: 3px solid var(--rp);
+      border-radius: 0 6px 6px 0;
+      padding: 1.2rem 1.4rem;
+      margin: 1.5rem 0;
+      font-size: 0.92rem;
+    }
+    .method-box strong { color: var(--rp); }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-family: 'Arial', sans-serif;
+      font-size: 0.78rem; color: var(--gray);
+      line-height: 1.8;
+    }
+    footer a { color: var(--rp); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.8rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .maps-grid  { grid-template-columns: 1fr; }
+      .result-box { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="logo">Autopsia Electoral ONPE 2026</span>
+  <div class="nav-links">
+    <a href="#hallazgos">Hallazgos</a>
+    <a href="#mapas">Mapas</a>
+    <a href="#robustez">Robustez</a>
+    <a href="#metodologia">Metodología</a>
+    <a href="autopsia_onpe2026.pdf">Paper completo</a>
+    <a href="https://github.com/mathieurojas/autopsy_onpe2026" target="_blank">Código</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="kicker">Investigación econométrica · Elecciones Generales Perú 2026</div>
+  <h1>Las fallas logísticas de la ONPE y su impacto en el resultado electoral</h1>
+  <div class="byline">Por Mathieu Rojas &nbsp;·&nbsp; <span id="fecha-update">Actualizándose...</span></div>
+
+  <div class="live-banner">
+    <div class="live-dot"></div>
+    <span>Análisis en curso · <strong id="pct-contabilizadas">—</strong> de mesas de sufragio procesadas · Se actualiza conforme la ONPE publica nuevas actas</span>
+  </div>
+
+  <p class="abstract">
+    El 12 de abril de 2026, la empresa <strong>Servicios Generales Galaga S.A.C.</strong> no cumplió con entregar los camiones contratados por la ONPE. Miles de mesas de sufragio abrieron tarde. Miles de ciudadanos no pudieron votar. <strong>Este análisis no alega fraude.</strong> Documenta algo distinto: una falla logística comprobada que, en una elección donde el segundo y tercer lugar se separan por miles de votos, pudo haber cambiado el resultado.
+  </p>
+
+  <div style="background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:0.9rem 1.2rem;font-family:Arial,sans-serif;font-size:0.82rem;color:#92400e;margin-bottom:1rem;">
+    ⚠️ <strong>Estimación en curso.</strong> Las mesas de sufragio con datos aún faltantes se concentran en los distritos con mayores retrasos — San Juan de Miraflores, Villa El Salvador, Lurín y Pachacámac. Esto significa que las cifras actuales son <strong>conservadoras</strong>: el impacto real es probablemente mayor. Este análisis se actualiza automáticamente.
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number" id="stat-votantes">—</div>
+      <div class="stat-label">Ciudadanos que no pudieron<br>ejercer su voto</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-number" id="stat-votos-netos">—</div>
+      <div class="stat-label">Votos netos estimados<br>a favor de RP sobre JPP</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="stat-cobertura">—</div>
+      <div class="stat-label">De mesas de sufragio<br>con datos disponibles</div>
+    </div>
+  </div>
+</div>
+
+<!-- HALLAZGOS -->
+<div class="section" id="hallazgos">
+  <h2>¿Qué encontramos?</h2>
+
+  <p>No todas las demoras importaron igual. Una mesa que abrió 30 minutos tarde probablemente no disuadió a nadie — la mayoría de electores esperó. Pero una mesa que abrió a las 11 de la mañana, o peor, a la 1 de la tarde, tuvo consecuencias reales y medibles.</p>
+
+  <div class="method-box">
+    <strong>El umbral importa.</strong> Nuestro modelo econométrico solo atribuye efectos causales a mesas que abrieron con <strong>dos horas o más de retraso</strong>. Por debajo de ese umbral, el efecto estadístico no es distinguible de cero. Esto hace la estimación conservadora — y por eso, más sólida.
+  </div>
+
+  <h3>Cómo aumentó el ausentismo según la hora de apertura</h3>
+  <div class="figure-wrap">
+    <img src="output/figures/fig2_curva_respuesta.png"
+         alt="Efecto del retraso en apertura sobre el ausentismo">
+    <div class="figure-caption" id="cap-fig2">Efecto marginal estimado sobre la tasa de ausentismo. Basado en <span id="n-mesas-fig">—</span> mesas de sufragio (<span id="pct-fig">—</span>% del total esperado para Lima y Callao). Banda: intervalo de confianza al 95% por bootstrap.</div>
+  </div>
+
+  <h3>Ausentismo observado frente a lo esperado sin retrasos</h3>
+  <div class="figure-wrap">
+    <img src="output/figures/fig3_ausentismo_obs_vs_cf.png"
+         alt="Ausentismo observado vs. contrafactual">
+    <div class="figure-caption">La diferencia entre las barras azules (lo que ocurrió) y grises (lo que habría ocurrido sin retrasos) representa los votantes atribuibles a las fallas logísticas. Solo se muestran diferencias estadísticamente significativas.</div>
+  </div>
+
+  <h3>Distribución de los retrasos</h3>
+  <div class="figure-wrap">
+    <img src="output/figures/fig1_distribucion_apertura.png"
+         alt="Distribución de tiempos de apertura">
+    <div class="figure-caption">La mayoría de mesas de sufragio abrió cerca de las 7:00 a.m. Pero una cola importante de mesas abrió tarde, algunas hasta las 2:00 p.m.</div>
+  </div>
+</div>
+
+<!-- MAPAS -->
+<div class="section" id="mapas">
+  <h2>¿Dónde ocurrió?</h2>
+
+  <p>Los retrasos no se distribuyeron aleatoriamente. Se concentraron en determinados distritos de Lima, principalmente en Lima Sur y Lima Oeste — que son, no casualmente, parte del territorio electoral más fuerte de López Aliaga.</p>
+
+  <div class="maps-grid">
+    <div>
+      <div class="figure-wrap">
+        <img src="output/figures/fig6_mapa_retraso.png" alt="Retraso promedio por distrito">
+        <div class="figure-caption">Retraso promedio en apertura de mesas por distrito.</div>
+      </div>
+    </div>
+    <div>
+      <div class="figure-wrap">
+        <img src="output/figures/fig7_mapa_votantes_perdidos.png" alt="Votantes perdidos por distrito">
+        <div class="figure-caption">Votantes que no pudieron sufragar por distrito.</div>
+      </div>
+    </div>
+    <div>
+      <div class="figure-wrap">
+        <img src="output/figures/fig8_mapa_rp_share.png" alt="Concentración de votos RP por distrito">
+        <div class="figure-caption">Proporción de votos a favor de RP por distrito. Los distritos con más retrasos coinciden con los de mayor apoyo a López Aliaga.</div>
+      </div>
+    </div>
+    <div>
+      <div class="figure-wrap">
+        <img src="output/figures/fig9_mapa_actas_faltantes.png" alt="Actas faltantes por distrito">
+        <div class="figure-caption">Porcentaje de actas aún no disponibles. Los distritos con más actas faltantes son los mismos con mayores retrasos — lo que sugiere que la cobertura actual podría subestimar el impacto total.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROBUSTEZ INTERACTIVA -->
+<div class="section" id="robustez">
+  <h2>¿Qué tan sólido es el resultado?</h2>
+
+  <p>El supuesto central es que los votantes que no pudieron ir habrían votado igual que sus vecinos de mesa. Pero ¿qué pasa si ese supuesto es incorrecto? El siguiente simulador permite explorar el resultado bajo distintos escenarios.</p>
+
+  <div class="figure-wrap">
+    <img src="output/figures/fig4_robustez_dentro_distrito.png"
+         alt="Variación dentro del distrito">
+    <div class="figure-caption">Primera verificación de robustez: el mismo patrón aparece cuando comparamos solo mesas <em>dentro del mismo distrito</em>, eliminando cualquier diferencia entre distritos.</div>
+  </div>
+
+  <div class="slider-section">
+    <h3>Simulador: ¿y si los ausentes votaban diferente?</h3>
+    <p>Mueve el control para asumir que los votantes ausentes eran más o menos favorables a JPP que los votantes observados en la misma mesa. El rango está calibrado a la variación real observada entre mesas del mismo distrito.</p>
+
+    <div class="slider-wrap">
+      <label>Ausentes más favorables a JPP →</label>
+      <input type="range" id="delta-slider" min="-3" max="3" value="0" step="0.1">
+      <span class="slider-val"><span id="delta-val">0</span> pp</span>
+    </div>
+
+    <div class="result-box">
+      <div class="result-item">
+        <div class="result-num" id="res-votos-rp">—</div>
+        <div class="result-label">Votos imputados<br>a RP</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num" id="res-votos-jpp">—</div>
+        <div class="result-label">Votos imputados<br>a JPP</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num" id="res-diferencia">—</div>
+        <div class="result-label">Diferencia neta<br>a favor de RP</div>
+      </div>
+      <div class="result-item">
+        <div class="result-num" id="res-votantes">—</div>
+        <div class="result-label">Votantes que no<br>pudieron sufragar</div>
+      </div>
+    </div>
+    <div class="scenario-note" id="scenario-note"></div>
+  </div>
+
+  <div class="figure-wrap">
+    <img src="output/figures/fig5_robustez_sensibilidad.png"
+         alt="Sensibilidad de la brecha">
+    <div class="figure-caption">Segunda verificación de robustez: la ventaja estimada a favor de RP se mantiene positiva en todos los escenarios evaluados dentro del rango empíricamente calibrado.</div>
+  </div>
+</div>
+
+<!-- METODOLOGÍA -->
+<div class="section" id="metodologia">
+  <h2>Cómo lo calculamos</h2>
+
+  <div class="method-box">
+    <strong>¿Qué son los efectos fijos de distrito?</strong><br>
+    Cada distrito tiene su propio nivel "normal" de ausentismo — en algunos distritos siempre va menos gente a votar, independientemente de lo que ocurra ese día. Los efectos fijos de distrito sirven para descontar ese nivel histórico antes de medir el efecto de los retrasos. En otras palabras: comparamos cada mesa con lo que habría sido su propio ausentismo de no haber habido retrasos, no con el ausentismo de un distrito diferente.
+  </div>
+
+  <div class="method-box">
+    <strong>¿Por qué un spline y no una línea recta?</strong><br>
+    La relación entre el retraso y el ausentismo no es lineal. 30 minutos de retraso tienen un efecto casi nulo; 3 horas tienen un efecto muy grande. Un spline cúbico restringido permite que la curva tome la forma que los datos indican, sin imponer ninguna forma específica de antemano.
+  </div>
+
+  <div class="method-box">
+    <strong>¿Por qué solo contamos mesas con más de 2 horas de retraso?</strong><br>
+    Porque por debajo de ese umbral, el efecto estadístico no es distinguible de cero — no podemos rechazar la hipótesis de que el impacto fue nulo. Incluir esas mesas inflaría artificialmente la estimación. Solo contamos lo que los datos nos permiten afirmar con confianza estadística.
+  </div>
+
+  <p>Para más detalle técnico, ver el <a href="autopsia_onpe2026.pdf">paper académico completo</a> y el <a href="https://github.com/mathieurojas/autopsy_onpe2026" target="_blank">código fuente</a>.</p>
+</div>
+
+<footer>
+  <strong>Autopsia Electoral ONPE 2026</strong><br>
+  Mathieu Rojas · Análisis econométrico independiente<br>
+  Código abierto · Datos públicos · Metodología documentada<br>
+  <a href="autopsia_onpe2026.pdf">Paper completo</a> ·
+  <a href="https://github.com/mathieurojas/autopsy_onpe2026" target="_blank">GitHub</a><br><br>
+  <span id="footer-update">—</span>
+</footer>
+
+<script>
+// ============================================================
+// Carga dinámica de datos desde los CSV de output
+// Los números se actualizan automáticamente al regenerar el pipeline
+// ============================================================
+
+// Función para parsear CSV simple
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  return lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i]);
+    return obj;
+  });
+}
+
+function fmt(n) {
+  return Math.round(n).toLocaleString('es-PE');
+}
+
+// Números clave — fuente única para paper y sitio web
+// Generado por 03_impute.R, se actualiza con cada ejecución del pipeline
+fetch('output/tables/numeros_clave.csv')
+  .then(r => r.text())
+  .then(text => {
+    const rows = parseCSV(text);
+    if (rows.length === 0) return;
+    const d = rows[0];
+
+    const votantes    = parseInt(d.votantes_perdidos)    || 0;
+    const votosRPBase = parseInt(d.votos_rp_imputados)   || 0;
+    const votosJPPBase= parseInt(d.votos_jpp_imputados)  || 0;
+    const difBase     = parseInt(d.diferencia_imputable) || 0;
+    const pct         = parseFloat(d.pct_cobertura)      || 0;
+    const nMesas      = parseInt(d.n_mesas)              || 0;
+    const fecha       = d.fecha_actualizacion            || '';
+
+    // Actualizar tarjetas principales
+    document.getElementById('stat-votantes').textContent    = fmt(votantes);
+    document.getElementById('stat-votos-netos').textContent = fmt(difBase);
+    document.getElementById('stat-cobertura').textContent   = pct + '%';
+
+    // Actualizar banner y captions
+    document.getElementById('pct-contabilizadas').textContent =
+      pct + '% de mesas de sufragio (' + fmt(nMesas) + ' de 29,266)';
+    document.getElementById('n-mesas-fig').textContent = fmt(nMesas);
+    document.getElementById('pct-fig').textContent     = pct;
+
+    // Actualizar fecha
+    if (fecha) {
+      document.getElementById('fecha-update').textContent =
+        'Actualizado el ' + fecha;
+      document.getElementById('footer-update').textContent =
+        'Análisis basado en actas digitales STAE-ONPE · Última actualización: ' + fecha;
+    }
+
+    // Inicializar slider con valores base
+    updateSlider(0, votantes, votosRPBase, votosJPPBase);
+
+    // Slider interactivo
+    const slider = document.getElementById('delta-slider');
+    slider.addEventListener('input', function() {
+      const delta       = parseFloat(this.value) / 100;
+      const rp_share_base  = votosRPBase  / votantes;
+      const jpp_share_base = votosJPPBase / votantes;
+      const jpp_adj = Math.min(Math.max(jpp_share_base + delta, 0), 1);
+      const rp_adj  = Math.min(Math.max(rp_share_base  - delta, 0), 1);
+      updateSlider(parseFloat(this.value), votantes,
+                   Math.round(votantes * rp_adj),
+                   Math.round(votantes * jpp_adj));
+    });
+  })
+  .catch(() => {
+    document.getElementById('stat-votantes').textContent    = 'Cargando...';
+    document.getElementById('stat-votos-netos').textContent = 'Cargando...';
+    document.getElementById('stat-cobertura').textContent   = 'Cargando...';
+  });
+
+function updateSlider(deltaVal, votantes, votosRP, votosJPP) {
+  const dif = votosRP - votosJPP;
+
+  document.getElementById('delta-val').textContent =
+    (deltaVal >= 0 ? '+' : '') + deltaVal.toFixed(1);
+  document.getElementById('res-votos-rp').textContent   = fmt(votosRP);
+  document.getElementById('res-votos-jpp').textContent  = fmt(votosJPP);
+  document.getElementById('res-votantes').textContent   = fmt(votantes);
+
+  const difEl = document.getElementById('res-diferencia');
+  difEl.textContent = (dif >= 0 ? '+' : '') + fmt(Math.abs(dif));
+  difEl.className = 'result-num' + (dif < 0 ? ' negative' : '');
+
+  const noteEl = document.getElementById('scenario-note');
+  if (deltaVal === 0) {
+    noteEl.textContent = 'Escenario base: los ausentes habrían votado igual que sus vecinos de mesa.';
+  } else if (deltaVal > 0) {
+    noteEl.textContent = `Escenario conservador: los ausentes eran ${deltaVal.toFixed(1)}pp más favorables a JPP que los votantes observados.`;
+  } else {
+    noteEl.textContent = `Escenario optimista para RP: los ausentes eran ${Math.abs(deltaVal).toFixed(1)}pp más favorables a RP que los votantes observados.`;
+  }
+}
+
+// Cobertura ya cargada desde numeros_clave.csv arriba
+
+// Fecha de actualización
+const hoy = new Date();
+const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+const fechaStr = hoy.toLocaleDateString('es-PE', opciones);
+document.getElementById('fecha-update').textContent =
+  'Actualizado el ' + fechaStr;
+document.getElementById('footer-update').textContent =
+  'Análisis basado en actas digitales STAE-ONPE · Última actualización: ' + fechaStr;
+</script>
+</body>
+</html>

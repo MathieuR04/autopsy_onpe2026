@@ -1,0 +1,19 @@
+# R
+*.Rhistory
+*.RData
+*.Rproj.user
+*.knit.md
+*.tex
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.DS_Store
+
+# Datos intermedios — no subir RDS (son grandes y regenerables)
+data/clean/*.rds
+
+# Pero SÍ subir los CSVs de output (son los que lee el sitio web)
+!output/tables/*.csv
+!data/clean/cobertura_distritos.csv

@@ -205,6 +205,12 @@ etable(
   tex       = TRUE,
   style.tex = style.tex("aer"),
   signif.code = c("***"=0.001,"**"=0.01,"*"=0.05,"."=0.1),
+  dict = c(
+    "ns(delay_min, knots = c(60, 120, 180), Boundary.knots = c(0, 420))1" = "0–60 min",
+    "ns(delay_min, knots = c(60, 120, 180), Boundary.knots = c(0, 420))2" = "60–120 min",
+    "ns(delay_min, knots = c(60, 120, 180), Boundary.knots = c(0, 420))3" = "120–180 min",
+    "ns(delay_min, knots = c(60, 120, 180), Boundary.knots = c(0, 420))4" = ">180 min"
+  ),
   extralines = list(
     "EF Distrito"  = c("Sí","Sí","Sí"),
     "EF Año"       = c("Sí","Sí","No"),
@@ -250,19 +256,19 @@ Estimamos que las fallas logísticas impidieron ejercer el voto a aproximadament
 
 ## Distribución geográfica
 
-```{r fig-mapa-retraso, fig.cap="Retraso promedio en apertura de mesas de sufragio por distrito. Lima Metropolitana y Callao, Elecciones Generales 2026.", out.width="72%", fig.height=4.5}
+```{r fig-mapa-retraso, fig.cap="Retraso promedio en apertura de mesas de sufragio por distrito. Lima Metropolitana y Callao, Elecciones Generales 2026.", out.width="72%", fig.height=3.5}
 include_graphics(file.path(FIG, "fig6_mapa_retraso.png"))
 ```
 
-```{r fig-mapa-perdidos, fig.cap="Número estimado de votantes que no pudieron sufragar por distrito, atribuibles a los retrasos en apertura de mesas.", out.width="72%", fig.height=4.5}
+```{r fig-mapa-perdidos, fig.cap="Número estimado de votantes que no pudieron sufragar por distrito, atribuibles a los retrasos en apertura de mesas.", out.width="72%", fig.height=3.5}
 include_graphics(file.path(FIG, "fig7_mapa_votantes_perdidos.png"))
 ```
 
-```{r fig-mapa-rp, fig.cap="Concentración de votos a favor de Renovación Popular por distrito. Los distritos con mayor apoyo a López Aliaga coinciden geográficamente con los de mayores retrasos.", out.width="72%", fig.height=4.5}
+```{r fig-mapa-rp, fig.cap="Concentración de votos a favor de Renovación Popular por distrito. Los distritos con mayor apoyo a López Aliaga coinciden geográficamente con los de mayores retrasos.", out.width="72%", fig.height=3.5}
 include_graphics(file.path(FIG, "fig8_mapa_rp_share.png"))
 ```
 
-```{r fig-faltantes, fig.cap="Porcentaje de actas de mesa aún no disponibles por distrito. Los distritos con más actas faltantes coinciden con los de mayores retrasos, lo que sugiere que las estimaciones actuales subestiman el impacto total.", out.width="72%", fig.height=4.5}
+```{r fig-faltantes, fig.cap="Porcentaje de actas de mesa aún no disponibles por distrito. Los distritos con más actas faltantes coinciden con los de mayores retrasos, lo que sugiere que las estimaciones actuales subestiman el impacto total.", out.width="72%", fig.height=3.5}
 include_graphics(file.path(FIG, "fig9_mapa_actas_faltantes.png"))
 ```
 

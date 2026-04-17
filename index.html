@@ -256,6 +256,14 @@
       .stats-grid { grid-template-columns: 1fr; }
       .maps-grid  { grid-template-columns: 1fr; }
       .result-box { grid-template-columns: 1fr; }
+      .slider-wrap {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+      .slider-wrap label { min-width: unset; }
+      .slider-wrap input[type=range] { width: 100%; }
+      .slider-val { text-align: left; }
     }
   </style>
 </head>
@@ -269,7 +277,7 @@
     <a href="#robustez">Robustez</a>
     <a href="#metodologia">Metodología</a>
     <a href="autopsia_onpe2026.pdf">Paper completo</a>
-    <a href="https://github.com/mathieurojas/autopsy_onpe2026" target="_blank">Código</a>
+    <a href="https://github.com/MathieuR04/autopsy_onpe2026" target="_blank">Código</a>
   </div>
 </nav>
 
@@ -388,16 +396,44 @@
   </div>
 
   <div class="slider-section">
-    <h3>Simulador: ¿y si los ausentes votaban diferente?</h3>
-    <p>Mueve el control para asumir que los votantes ausentes eran más o menos favorables a JPP que los votantes observados en la misma mesa. El rango está calibrado a la variación real observada entre mesas del mismo distrito.</p>
+    <h3>Simulador: explora los supuestos del modelo</h3>
+    <p>Ajusta los dos parámetros clave para ver cómo cambia el resultado bajo distintos escenarios.</p>
 
-    <div class="slider-wrap">
-      <label>Ausentes más favorables a JPP →</label>
-      <input type="range" id="delta-slider" min="-3" max="3" value="0" step="0.1">
-      <span class="slider-val"><span id="delta-val">0</span> pp</span>
+    <!-- Slider 1: preferencia de ausentes -->
+    <div style="margin-bottom:1.2rem;">
+      <div style="font-family:Arial,sans-serif;font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">
+        Preferencia de los ausentes
+      </div>
+      <div style="font-family:Arial,sans-serif;font-size:0.78rem;color:var(--gray);margin-bottom:0.6rem;">
+        ¿Cuánto más favorables a JPP (o RP) eran los que no votaron, respecto a quienes sí votaron en su misma mesa?
+      </div>
+      <div class="slider-wrap">
+        <label>← Más pro-RP &nbsp;&nbsp; Más pro-JPP →</label>
+        <input type="range" id="delta-slider" min="-3" max="3" value="0" step="0.1">
+        <span class="slider-val"><span id="delta-val">+0.0</span> pp</span>
+      </div>
+    </div>
+
+    <!-- Slider 2: ausentismo inducido -->
+    <div style="margin-bottom:1.4rem;">
+      <div style="font-family:Arial,sans-serif;font-size:0.82rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">
+        Magnitud del ausentismo inducido
+      </div>
+      <div style="font-family:Arial,sans-serif;font-size:0.78rem;color:var(--gray);margin-bottom:0.6rem;">
+        El modelo estima que el retraso causó un aumento de ~7.8pp en ausentismo en mesas con más de 2h de retraso. ¿Qué pasa si ese efecto fue menor o mayor?
+      </div>
+      <div class="slider-wrap">
+        <label>← Efecto menor &nbsp;&nbsp; Efecto mayor →</label>
+        <input type="range" id="abs-slider" min="30" max="150" value="100" step="5">
+        <span class="slider-val"><span id="abs-val">100</span>% del estimado</span>
+      </div>
     </div>
 
     <div class="result-box">
+      <div class="result-item">
+        <div class="result-num" id="res-votantes">—</div>
+        <div class="result-label">Votantes que no<br>pudieron sufragar</div>
+      </div>
       <div class="result-item">
         <div class="result-num" id="res-votos-rp">—</div>
         <div class="result-label">Votos imputados<br>a RP</div>
@@ -409,10 +445,6 @@
       <div class="result-item">
         <div class="result-num" id="res-diferencia">—</div>
         <div class="result-label">Diferencia neta<br>a favor de RP</div>
-      </div>
-      <div class="result-item">
-        <div class="result-num" id="res-votantes">—</div>
-        <div class="result-label">Votantes que no<br>pudieron sufragar</div>
       </div>
     </div>
     <div class="scenario-note" id="scenario-note"></div>
@@ -444,7 +476,7 @@
     Porque por debajo de ese umbral, el efecto estadístico no es distinguible de cero — no podemos rechazar la hipótesis de que el impacto fue nulo. Incluir esas mesas inflaría artificialmente la estimación. Solo contamos lo que los datos nos permiten afirmar con confianza estadística.
   </div>
 
-  <p>Para más detalle técnico, ver el <a href="autopsia_onpe2026.pdf">paper académico completo</a> y el <a href="https://github.com/mathieurojas/autopsy_onpe2026" target="_blank">código fuente</a>.</p>
+  <p>Para más detalle técnico, ver el <a href="autopsia_onpe2026.pdf">paper académico completo</a> y el <a href="https://github.com/MathieuR04/autopsy_onpe2026" target="_blank">código fuente</a>.</p>
 </div>
 
 <footer>
@@ -452,7 +484,7 @@
   Mathieu Rojas · Análisis econométrico independiente<br>
   Código abierto · Datos públicos · Metodología documentada<br>
   <a href="autopsia_onpe2026.pdf">Paper completo</a> ·
-  <a href="https://github.com/mathieurojas/autopsy_onpe2026" target="_blank">GitHub</a><br><br>
+  <a href="https://github.com/MathieuR04/autopsy_onpe2026" target="_blank">GitHub</a><br><br>
   <span id="footer-update">—</span>
 </footer>
 
@@ -514,21 +546,16 @@ fetch('output/tables/numeros_clave.csv')
         'Análisis basado en actas digitales STAE-ONPE · Última actualización: ' + fecha;
     }
 
-    // Inicializar slider con valores base
-    updateSlider(0, votantes, votosRPBase, votosJPPBase);
+    // Store base values globally for dual-slider computation
+    window._simBase = { votantes, votosRPBase, votosJPPBase, difBase };
 
-    // Slider interactivo
-    const slider = document.getElementById('delta-slider');
-    slider.addEventListener('input', function() {
-      const delta       = parseFloat(this.value) / 100;
-      const rp_share_base  = votosRPBase  / votantes;
-      const jpp_share_base = votosJPPBase / votantes;
-      const jpp_adj = Math.min(Math.max(jpp_share_base + delta, 0), 1);
-      const rp_adj  = Math.min(Math.max(rp_share_base  - delta, 0), 1);
-      updateSlider(parseFloat(this.value), votantes,
-                   Math.round(votantes * rp_adj),
-                   Math.round(votantes * jpp_adj));
-    });
+    // Inicializar con valores base
+    computeAndUpdate();
+
+    // Slider 1: preferencia de ausentes
+    document.getElementById('delta-slider').addEventListener('input', computeAndUpdate);
+    // Slider 2: magnitud del ausentismo
+    document.getElementById('abs-slider').addEventListener('input', computeAndUpdate);
   })
   .catch(() => {
     document.getElementById('stat-votantes').textContent    = 'Cargando...';
@@ -536,27 +563,54 @@ fetch('output/tables/numeros_clave.csv')
     document.getElementById('stat-cobertura').textContent   = 'Cargando...';
   });
 
-function updateSlider(deltaVal, votantes, votosRP, votosJPP) {
-  const dif = votosRP - votosJPP;
+function computeAndUpdate() {
+  if (!window._simBase) return;
+  const { votantes: votantesBase, votosRPBase, votosJPPBase } = window._simBase;
 
+  const deltaVal = parseFloat(document.getElementById('delta-slider').value);
+  const absVal   = parseFloat(document.getElementById('abs-slider').value) / 100;
+
+  // Apply ausentismo scaling — scales the number of lost voters
+  const votantes = Math.round(votantesBase * absVal);
+
+  // Apply preference shift
+  const delta          = deltaVal / 100;
+  const rp_share_base  = votosRPBase  / votantesBase;
+  const jpp_share_base = votosJPPBase / votantesBase;
+  const rp_adj  = Math.min(Math.max(rp_share_base  - delta, 0), 1);
+  const jpp_adj = Math.min(Math.max(jpp_share_base + delta, 0), 1);
+
+  const votosRP  = Math.round(votantes * rp_adj);
+  const votosJPP = Math.round(votantes * jpp_adj);
+  const dif      = votosRP - votosJPP;
+
+  // Update delta display
   document.getElementById('delta-val').textContent =
     (deltaVal >= 0 ? '+' : '') + deltaVal.toFixed(1);
-  document.getElementById('res-votos-rp').textContent   = fmt(votosRP);
-  document.getElementById('res-votos-jpp').textContent  = fmt(votosJPP);
-  document.getElementById('res-votantes').textContent   = fmt(votantes);
+  document.getElementById('abs-val').textContent = Math.round(absVal * 100);
+
+  // Update result cards
+  document.getElementById('res-votos-rp').textContent  = fmt(votosRP);
+  document.getElementById('res-votos-jpp').textContent = fmt(votosJPP);
+  document.getElementById('res-votantes').textContent  = fmt(votantes);
 
   const difEl = document.getElementById('res-diferencia');
   difEl.textContent = (dif >= 0 ? '+' : '') + fmt(Math.abs(dif));
   difEl.className = 'result-num' + (dif < 0 ? ' negative' : '');
 
-  const noteEl = document.getElementById('scenario-note');
-  if (deltaVal === 0) {
-    noteEl.textContent = 'Escenario base: los ausentes habrían votado igual que sus vecinos de mesa.';
-  } else if (deltaVal > 0) {
-    noteEl.textContent = `Escenario conservador: los ausentes eran ${deltaVal.toFixed(1)}pp más favorables a JPP que los votantes observados.`;
-  } else {
-    noteEl.textContent = `Escenario optimista para RP: los ausentes eran ${Math.abs(deltaVal).toFixed(1)}pp más favorables a RP que los votantes observados.`;
+  // Scenario description
+  const parts = [];
+  if (deltaVal !== 0) {
+    parts.push(deltaVal > 0
+      ? `ausentes ${deltaVal.toFixed(1)}pp más favorables a JPP`
+      : `ausentes ${Math.abs(deltaVal).toFixed(1)}pp más favorables a RP`);
   }
+  if (Math.abs(absVal - 1) > 0.01) {
+    parts.push(`ausentismo inducido al ${Math.round(absVal*100)}% del estimado`);
+  }
+  document.getElementById('scenario-note').textContent = parts.length
+    ? 'Escenario: ' + parts.join(' · ')
+    : 'Escenario base: supuestos del modelo principal.';
 }
 
 // Cobertura ya cargada desde numeros_clave.csv arriba

@@ -147,15 +147,6 @@ lima_2026 |>
   kable_styling(
     latex_options = c("striped", "hold_position", "scale_down"),
     font_size     = 9
-  ) |>
-  footnote(
-    general = paste0(
-      "Aus. contrafactual = ausentismo predicho si la mesa hubiera abierto a tiempo. ",
-      "Votantes perdidos solo se reportan para mesas con retraso $\\\\geq 120$ min. ",
-      "Basado en ", format(n_mesas_total, big.mark = ","),
-      " mesas (", pct_cobertura, "\\\\% del total esperado)."
-    ),
-    escape = FALSE
   )
 ```
 
@@ -176,6 +167,54 @@ Donde $\alpha_d$ son efectos fijos de distrito, $\gamma_t$ son efectos fijos de 
 La elección del spline sobre una especificación lineal responde a consideraciones teóricas y empíricas. Un ciudadano que encuentra su mesa cerrada a las 7:30 a.m. probablemente espera o regresa; uno que la encuentra cerrada a las 11:00 a.m. enfrenta una ventana de votación reducida a la mitad y mayores costos de oportunidad. El spline permite recuperar esta no-linealidad sin imponer ninguna forma funcional específica. Los errores estándar se clusteran a nivel de distrito y las observaciones se ponderan por número de electores hábiles.
 
 # Resultados
+
+## Estimaciones del modelo
+
+```{r tab-regresion, results='asis'}
+KNOTS <- c(60, 120, 180)
+
+modelo_principal <- feols(
+  absenteeism ~ ns(delay_min, knots = KNOTS, Boundary.knots = c(0, 420)) |
+    district + year_fct,
+  data    = panel |> filter(!is.na(delay_min)),
+  cluster = ~district,
+  weights = ~eligible_voters
+)
+
+modelo_nopesos <- feols(
+  absenteeism ~ ns(delay_min, knots = KNOTS, Boundary.knots = c(0, 420)) |
+    district + year_fct,
+  data    = panel |> filter(!is.na(delay_min)),
+  cluster = ~district
+)
+
+modelo_solo2026 <- feols(
+  absenteeism ~ ns(delay_min, knots = KNOTS, Boundary.knots = c(0, 420)) |
+    district,
+  data    = lima_2026,
+  cluster = ~district,
+  weights = ~eligible_voters
+)
+
+etable(
+  modelo_principal, modelo_nopesos, modelo_solo2026,
+  headers   = c("(1) Principal", "(2) Sin pesos", "(3) Solo 2026"),
+  title     = "Efecto del retraso en apertura sobre la tasa de ausentismo",
+  depvar    = FALSE,
+  fitstat   = ~ r2 + wr2 + n,
+  tex       = TRUE,
+  style.tex = style.tex("aer"),
+  signif.code = c("***"=0.001,"**"=0.01,"*"=0.05,"."=0.1),
+  extralines = list(
+    "EF Distrito"  = c("Sí","Sí","Sí"),
+    "EF Año"       = c("Sí","Sí","No"),
+    "Ponderado"    = c("Sí","No","Sí")
+  )
+)
+```
+
+El Cuadro \ref{tab:tab-regresion} presenta los resultados de la estimación del modelo principal junto con dos especificaciones alternativas. La columna (1) corresponde al modelo principal ponderado por electores hábiles con efectos fijos de distrito y año. La columna (2) muestra que los resultados son cualitativamente idénticos sin ponderación. La columna (3) estima el modelo solo con datos de 2026, sin los efectos fijos de año identificados históricamente. En todas las especificaciones, los segmentos del spline correspondientes a retrasos mayores a dos horas son estadísticamente significativos y de magnitud similar, lo que confirma la robustez de los resultados.
+
 
 ```{r resumen-numeros, results='asis'}
 cat(paste0(
@@ -254,25 +293,12 @@ tibble(
     linesep  = ""
   ) |>
   kable_styling(latex_options = c("hold_position"), font_size = 10) |>
-  row_spec(3, bold = TRUE) |>
-  footnote(
-    general = paste0(
-      "Votos imputados = votantes perdidos $\\\\times$ proporción observada en la misma mesa. ",
-      "Solo mesas con retraso $\\\\geq 120$ min. ",
-      "Basado en ", format(n_mesas_total, big.mark = ","),
-      " mesas (", pct_cobertura, "\\\\% del total esperado)."
-    ),
-    escape = FALSE
-  )
+  row_spec(3, bold = TRUE)
 ```
 
 # Verificaciones de robustez
 
 ## Variación dentro del distrito
-
-```{r fig-robustez1, fig.cap="Ausentismo residual por categoría de retraso, luego de descontar la media histórica del distrito. El patrón confirma el efecto del retraso usando solo variación within-distrito.", out.width="85%", fig.height=4}
-include_graphics(file.path(FIG, "fig4_robustez_dentro_distrito.png"))
-```
 
 La primera verificación utiliza únicamente la variación entre mesas del mismo distrito (Figura \ref{fig:fig-robustez1}). Este estimador, equivalente a efectos fijos de interacción distrito$\times$año, es el más exigente disponible y descarta la posibilidad de que el efecto sea atribuible a diferencias estructurales entre distritos.
 

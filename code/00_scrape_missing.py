@@ -22,7 +22,7 @@ from threading import Lock
 from tqdm import tqdm
 
 BASE_URL   = "https://actas-stae.onpe.gob.pe"
-OUT_FILE   = "lima_2026.csv"
+OUT_FILE   = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "raw", "lima_2026.csv")
 TIMEOUT    = 15
 HEADERS    = {"User-Agent": "Mozilla/5.0"}
 write_lock = Lock()
@@ -147,7 +147,7 @@ def main():
 
     # Load IDs already in lima_2026.csv
     if not file_exists(OUT_FILE):
-        print(f"ERROR: {OUT_FILE} not found. Run from the autopsy folder.")
+        print(f"ERROR: {OUT_FILE} not found. Asegúrate de que data/raw/lima_2026.csv existe.")
         return
 
     existing = set(
